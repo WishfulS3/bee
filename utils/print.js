@@ -1,33 +1,24 @@
 const WXAPI = require('apifm-wxapi')
-const CONFIG = require('../config.js')  // 添加这行，引入配置文件
-
 
 class PrintService {
   constructor() {
     this.timer = null
     this.isRunning = false
     this.lastCheckTime = null
-    this.xToken = '5b02fe44-8c8c-4ea4-ba38-c8639f4af8f8' // X-Token
-
+    this.xToken = '5b02fe44-8c8c-4ea4-ba38-c8639f4af8f8'
   }
 
   startPolling() {
     if (this.isRunning) return
-    
     this.isRunning = true
-    console.log('开始轮询打印服务')
-    
-    // 先检查一次订单
     this.checkOrders()
     
-    // 设置定时器
     this.timer = setInterval(() => {
       this.checkOrders()
     }, 30000)
   }
 
   stopPolling() {
-    console.log('停止轮询打印服务')
     if (this.timer) {
       clearInterval(this.timer)
       this.timer = null
@@ -38,66 +29,69 @@ class PrintService {
   checkOrders() {
     console.log('开始检查订单...')
     
-    // 使用 WXAPI 进行请求
-    WXAPI.request({
-      url: '/user/apiExtOrder/list',
+    wx.request({
+      url: 'https://user.api.it120.cc/user/apiExtOrder/list',
       method: 'POST',
       header: {
-        'X-Token': this.xToken
+        'X-Token': this.xToken,
+        'content-type': 'application/x-www-form-urlencoded'
       },
       data: {
         status: '1',
         dateAddBegin: this.lastCheckTime || ''
+      },
+      success: (res) => {
+        console.log('订单列表响应:', res)
+        if (res.data && res.data.code === 0) {
+          this.lastCheckTime = new Date().toISOString()
+          const orders = res.data.data.list || []
+          console.log('获取到订单数:', orders.length)
+          orders.forEach(order => {
+            if (this.needPrint(order)) {
+              this.processPrintOrder(order.id)
+            }
+          })
+        } else {
+          console.error('获取订单列表失败:', res.data ? res.data.msg : '接口异常')
+        }
+      },
+      fail: (error) => {
+        console.error('请求订单列表失败:', error)
       }
-    }).then(res => {
-      console.log('订单列表响应:', res)
-      if (res.code === 0) {
-        this.lastCheckTime = new Date().toISOString()
-        const orders = res.data.list || []
-        console.log('获取到订单数:', orders.length)
-        orders.forEach(order => {
-          if (this.needPrint(order)) {
-            this.processPrintOrder(order.id)
-          }
-        })
-      } else {
-        console.error('获取订单列表失败:', res.msg)
-      }
-    }).catch(error => {
-      console.error('请求订单列表失败:', error)
     })
   }
-
-
 
   needPrint(order) {
     return order.status == 1 && !order.printed
   }
 
   processPrintOrder(orderId) {
-    WXAPI.request({
-      url: '/user/apiExtOrder/detail',
+    wx.request({
+      url: 'https://user.api.it120.cc/user/apiExtOrder/detail',
       method: 'GET',
       header: {
         'X-Token': this.xToken
       },
-      data: { id: orderId }
-    }).then(detailRes => {
-      if (detailRes.code === 0) {
-        const orderDetail = detailRes.data
-        this.doPrint(orderDetail)
-      } else {
-        console.error('获取订单详情失败:', detailRes.msg)
+      data: { 
+        id: orderId 
+      },
+      success: (detailRes) => {
+        if (detailRes.data && detailRes.data.code === 0) {
+          const orderDetail = detailRes.data.data
+          this.doPrint(orderDetail)
+        } else {
+          console.error('获取订单详情失败:', detailRes.data ? detailRes.data.msg : '接口异常')
+        }
+      },
+      fail: (error) => {
+        console.error('获取订单详情失败:', error)
       }
-    }).catch(error => {
-      console.error('获取订单详情失败:', error)
     })
   }
 
   doPrint(orderDetail) {
-    // 打印接口可能需要用不同的域名
     wx.request({
-      url: `${CONFIG.printApiUrl}/printLabelMsg.php`,
+      url: 'http://localhost/printLabelMsg.php', // 根据实际打印服务器地址修改
       method: 'POST',
       header: {
         'content-type': 'application/x-www-form-urlencoded'
