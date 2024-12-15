@@ -13,7 +13,7 @@
     data-id="{{noticeLastOne.id}}"
   />
 </view>
-<view wx:if="{{ !scanDining }}" class="box">
+<view wx:if="{{ !scanDining }}" class="box" style="height: 160rpx; display: block; box-sizing: border-box">
   <view class="shop-name">
     <view class="name" bindtap="selectshop">{{shopInfo.name}}</view>
     <view wx:if="{{ shopInfo.openWaimai && shopInfo.openZiqu }}" class="select">
@@ -226,11 +226,24 @@
 </view>
 </van-popup> 
 
-<van-overlay show="{{ !scanDining && showCouponPop }}" bind:click="couponOverlayClick">
+<van-overlay show="{{ showCouponPop }}" bind:click="couponOverlayClick"> 
   <view class="couponOverlay-container">
-    <image src="/images/coupon.png" bindtap="couponImageClick"></image>
+    <image src="/images/coupon.png" mode="widthFix" bindtap="couponImageClick"></image>
+  </view>
+  
+</van-overlay>
+
+<van-overlay show="{{ showAdPopup }}" bind:click="closeAdPopup">
+  <view class="couponOverlay-container">
+    <image
+  src="/images/ad (2).png"
+  mode="widthFix"
+  bindtap="tapAd"
+  style="width: 76%; height: auto;"
+></image>
   </view>
 </van-overlay>
+
 
 
 <block wx:if="{{ scanDining }}">

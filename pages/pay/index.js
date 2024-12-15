@@ -241,7 +241,7 @@ Page({
       if (postData.peisongType == 'zq') {
         extJsonStr['取餐时间'] = this.data.diningTime
       } else {
-        extJsonStr['送达时间'] = this.data.diningTime
+        extJsonStr['配送时间'] = this.data.diningTime
       }
     }
     postData.extJsonStr = JSON.stringify(extJsonStr)

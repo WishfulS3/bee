@@ -8,6 +8,8 @@ Page({
     showCartPop: false, // 是否显示购物车列表
     showGoodsDetailPOP: false, // 是否显示商品详情
     showCouponPop: false, // 是否弹出优惠券领取提示
+    showAdPopup: false, // 弹窗默认不显示
+
     shopIsOpened: false, // 是否营业
 
     showPingtuanPop: false,
@@ -18,6 +20,8 @@ Page({
     menuButtonBoundingClientRect: wx.getMenuButtonBoundingClientRect(),
   },  
   onLoad: function (e) {
+    this.checkAdPopup();
+
     getApp().initLanguage(this)
     const _data = {}
     // 测试拼团入口
@@ -230,13 +234,15 @@ Page({
   // 获取分类
   async categories() {
     const shopInfo = wx.getStorageSync('shopInfo')
+      //     const shop_goods_split = wx.getStorageSync('shop_goods_split')
     const shop_goods_split = wx.getStorageSync('shop_goods_split')
     let shopId = '0'
     if (shopInfo) {
       shopId = '0,' + shopInfo.id
     }
     if (shop_goods_split != '1') {
-      shopId = ''
+      shopId =  shopInfo.id
+
     }
     // https://www.yuque.com/apifm/nu0f75/racmle
     const res = await WXAPI.goodsCategoryV2(shopId)
@@ -253,7 +259,10 @@ Page({
       categorySelected: res.data[0]
     })
     if (shop_goods_split == '1') {
-      wx.setStorageSync('shopIds', res.data[0].id)
+      wx.setStorageSync('shopIds', shopInfo.id)
+      console.log('shopInfo:', shopInfo.id);
+
+      
     } else {
       wx.removeStorageSync('shopIds')
     }
@@ -787,6 +796,29 @@ Page({
       path
     }
   },
+
+  
+  // 检查是否需要展示弹窗
+  checkAdPopup() {
+    const lastAdDate = wx.getStorageSync('lastAdDate');
+    const today = new Date().toDateString();
+
+    if (lastAdDate !== today) {
+      this.setData({ showAdPopup: true });
+      wx.setStorageSync('lastAdDate', today); // 更新为今天
+    }
+  },
+  // 点击关闭弹窗
+  closeAdPopup() {
+    this.setData({ showAdPopup: false });
+  },
+  // 点击广告跳转
+  tapAd() {
+    wx.navigateTo({
+      url: '/pages/ad-detail/ad-detail' // 替换为实际广告详情页面路径
+    });
+  },
+
   couponOverlayClick() {
     this.setData({
       showCouponPop: false

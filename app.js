@@ -2,6 +2,8 @@ const WXAPI = require('apifm-wxapi')
 const CONFIG = require('config.js')
 const AUTH = require('utils/auth')
 const i18n = require("i18n/index")
+const PrintService = require('utils/print')
+
 App({
   onLaunch: function() {
     i18n.getLanguage()
@@ -9,7 +11,6 @@ App({
     const $t = i18n.$t()
     WXAPI.init(CONFIG.subDomain)
     WXAPI.setMerchantId(CONFIG.merchantId)
-    const that = this;
     // 检测新版本
     const updateManager = wx.getUpdateManager()
     updateManager.onUpdateReady(function () {
@@ -33,7 +34,7 @@ App({
       success(res) {
         const networkType = res.networkType
         if (networkType === 'none') {
-          that.globalData.isConnected = false
+          this.globalData.isConnected = false
           wx.showToast({
             title: $t.common.noNetwork,
             icon: 'loading'
@@ -45,15 +46,15 @@ App({
      * 监听网络状态变化
      * 可根据业务需求进行调整
      */
-    wx.onNetworkStatusChange(function(res) {
+    wx.onNetworkStatusChange((res) => {
       if (!res.isConnected) {
-        that.globalData.isConnected = false
+        this.globalData.isConnected = false
         wx.showToast({
           title: $t.common.networkDown,
           icon: 'loading'
         })
       } else {
-        that.globalData.isConnected = true
+        this.globalData.isConnected = true
         wx.hideToast()
       }
     })
@@ -68,9 +69,25 @@ App({
       }
     })
   },
+
   onShow (e) {
+    AUTH.checkHasLogined().then(isLogined => {
+      if (isLogined) {
+        const token = wx.getStorageSync('token')
+        WXAPI.checkToken(token).then(res => {
+          if (res.code == 0) {
+            PrintService.startPolling()
+          } else {
+            AUTH.authorize()
+          }
+        })
+      } else {
+        AUTH.authorize()
+      }
+    })
+
     if (e && e.query && e.query.scene) {
-      const scene = decodeURIComponent(e.query.scene) // 处理扫码进商品详情页面的逻辑
+      const scene = decodeURIComponent(e.query.scene)
       if (scene && scene.split(',').length == 3) {
         // 扫码点餐
       } else {
@@ -87,6 +104,7 @@ App({
         }
       })
     }
+    
     // 保存邀请人
     if (e && e.query && e.query.inviter_id) {
       wx.setStorageSync('referrer', e.query.inviter_id)
@@ -124,8 +142,12 @@ App({
     }
     this.refreshStorageShopInfo()
   },
+
+  onHide() {
+    PrintService.stopPolling()
+  },
+
   async refreshStorageShopInfo() {
-    // 刷新本地缓存的门店信息 https://www.yuque.com/apifm/nu0f75/cu4cfi
     let shopInfo = wx.getStorageSync('shopInfo')
     if (!shopInfo) {
       return
@@ -135,15 +157,17 @@ App({
       const distance = shopInfo.distance
       shopInfo = res.data.info
       shopInfo.distance = distance
-      wx.setStorageSync('shopInfo',  shopInfo)
+      wx.setStorageSync('shopInfo', shopInfo)
     }
   },
+
   initLanguage(_this) {
     _this.setData({
       language: i18n.getLanguage(),
       $t: i18n.$t(),
     })
   },
+
   changeLang(_this) {
     const langs = i18n.langs
     const nameArray = []
@@ -161,9 +185,11 @@ App({
       }
     })
   },
+
   setTabBarLanguage() {
     i18n.setTabBarLanguage()
   },
+
   globalData: {
     isConnected: true
   }
