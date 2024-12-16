@@ -37,9 +37,9 @@ class PrintService {
         'content-type': 'application/x-www-form-urlencoded'
       },
       data: {
-         // status: '1',  // 暂时注释掉状态过滤
-        // dateAddBegin: this.lastCheckTime || '', // 暂时注释掉时间过滤
-        pageSize: 10,  // 每页显示10条
+        // status: '1',  // 状态过滤
+        dateAddBegin: this.lastCheckTime || '', //时间过滤
+        pageSize: 3,  // 每页显示10条
         page: 1       // 第一页
       },
       success: (res) => {
