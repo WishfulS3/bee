@@ -15,7 +15,7 @@ class PrintService {
     
     this.timer = setInterval(() => {
       this.checkOrders()
-    }, 30000)
+    }, 50000)
   }
 
   stopPolling() {
@@ -45,23 +45,27 @@ class PrintService {
       success: (res) => {
         console.log('订单列表响应:', res)
         if (res.data && res.data.code === 0) {
-          const orders = res.data.data.list || []
+          this.lastCheckTime = new Date().toISOString()
+          const orders = res.data.data.result || []
           console.log('获取到订单数:', orders.length)
-          if (orders.length > 0) {
-            console.log('订单列表:', orders) // 打印具体订单信息，看看订单的状态值
-          } else {
-            console.log('当前没有订单')
-          }
+          orders.forEach(order => {
+            if (this.needPrint(order)) {
+              this.processPrintOrder(order.id)
+            }
+          })
+        } else {
+          console.error('获取订单列表失败:', res.data ? res.data.msg : '接口异常')
         }
       },
       fail: (error) => {
         console.error('请求订单列表失败:', error)
       }
     })
-}
+  }
 
   needPrint(order) {
-    return order.status == 1 && !order.printed
+    // 根据实际返回的订单状态判断
+    return order.isPay && !order.printed
   }
 
   processPrintOrder(orderId) {
@@ -89,26 +93,26 @@ class PrintService {
   }
 
   doPrint(orderDetail) {
+    // 构建打印数据
+    const printData = {
+      orderid: orderDetail.orderNumber,
+      remark: orderDetail.remark || '',
+      name: orderDetail.shopName, // 使用店铺名称
+      z_number: orderDetail.qudanhao, // 取单号
+      type: 0 // 订单类型
+    }
+
     wx.request({
-      url: 'http://localhost/label/printLabelMsg.php', // 根据实际打印服务器地址修改
+      url: 'http://localhost/label/printLabelMsg.php',
       method: 'POST',
       header: {
         'content-type': 'application/x-www-form-urlencoded'
       },
-      data: {
-        orderid: orderDetail.orderNumber,
-        name: orderDetail.logisticsName,
-        tel: orderDetail.logisticsMobile,
-        remark: orderDetail.remark || '',
-        goods: orderDetail.goodsList.map(item => ({
-          title: item.goodsName,
-          price: item.amount,
-          num: item.number
-        }))
-      },
+      data: printData,
       success: (printRes) => {
         if (printRes.data && printRes.data.ret === 0) {
           console.log('订单打印成功:', orderDetail.orderNumber)
+          // 这里可以添加更新订单打印状态的逻辑
         } else {
           console.error('订单打印失败:', printRes.data ? printRes.data.msg : '打印接口异常')
         }
