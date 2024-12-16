@@ -37,29 +37,28 @@ class PrintService {
         'content-type': 'application/x-www-form-urlencoded'
       },
       data: {
-        status: '1',
-        dateAddBegin: this.lastCheckTime || ''
+         // status: '1',  // 暂时注释掉状态过滤
+        // dateAddBegin: this.lastCheckTime || '', // 暂时注释掉时间过滤
+        pageSize: 10,  // 每页显示10条
+        page: 1       // 第一页
       },
       success: (res) => {
         console.log('订单列表响应:', res)
         if (res.data && res.data.code === 0) {
-          this.lastCheckTime = new Date().toISOString()
           const orders = res.data.data.list || []
           console.log('获取到订单数:', orders.length)
-          orders.forEach(order => {
-            if (this.needPrint(order)) {
-              this.processPrintOrder(order.id)
-            }
-          })
-        } else {
-          console.error('获取订单列表失败:', res.data ? res.data.msg : '接口异常')
+          if (orders.length > 0) {
+            console.log('订单列表:', orders) // 打印具体订单信息，看看订单的状态值
+          } else {
+            console.log('当前没有订单')
+          }
         }
       },
       fail: (error) => {
         console.error('请求订单列表失败:', error)
       }
     })
-  }
+}
 
   needPrint(order) {
     return order.status == 1 && !order.printed
@@ -91,7 +90,7 @@ class PrintService {
 
   doPrint(orderDetail) {
     wx.request({
-      url: 'http://localhost/printLabelMsg.php', // 根据实际打印服务器地址修改
+      url: 'http://localhost/label/printLabelMsg.php', // 根据实际打印服务器地址修改
       method: 'POST',
       header: {
         'content-type': 'application/x-www-form-urlencoded'
