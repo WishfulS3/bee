@@ -131,58 +131,69 @@ class PrintService {
       }
     })
   }
-
   doPrint(orderDetail) {
-    // 打印订单详情，方便调试
     console.log('订单详情数据:', orderDetail)
     
-    const printData = {
-      orderid: orderDetail.orderNumber,
-      remark: orderDetail.remark || '',
-      name: orderDetail.shopName,
-      tel: orderDetail.tel || '',
-      z_number: orderDetail.qudanhao || '',
-      goods: []  // 先创建空数组
-    }
+    // 从正确的位置获取数据
+    const order = orderDetail.order
+    const goodsList = orderDetail.goodsList || []
+    const extJson = orderDetail.extJson || {}
 
-    // 检查商品列表数据
-    if (orderDetail.goodsList && Array.isArray(orderDetail.goodsList)) {
-      printData.goods = orderDetail.goodsList.map(item => ({
+    const printData = {
+      orderid: order.orderNumber,
+      remark: order.remark || '',
+      name: order.shopName,
+      tel: extJson.联系电话 || '', // 从扩展信息中获取电话
+      z_number: order.qudanhao || '',
+      goods: goodsList.map(item => ({
         title: item.goodsName,
         price: item.amount,
         num: item.number
       }))
-    } else {
-      // 如果没有商品列表，使用订单总额创建一个商品
+    }
+
+    // 如果商品列表为空，使用订单总额
+    if (!printData.goods.length) {
       printData.goods = [{
         title: '商品',
-        price: orderDetail.amountReal || 0,
-        num: orderDetail.goodsNumber || 1
+        price: order.amountReal || 0,
+        num: order.goodsNumber || 1
       }]
-    }   // 打印发送的数据，方便调试
+    }
+
     console.log('发送到打印机的数据:', printData)
 
+    // 将数据转换为 URL 编码格式
+    const formData = new URLSearchParams()
+    Object.keys(printData).forEach(key => {
+      if (key === 'goods') {
+        formData.append(key, JSON.stringify(printData[key]))
+      } else {
+        formData.append(key, printData[key])
+      }
+    })
+
     wx.request({
-      url: 'http://localhost/print/printLabelMsg.php',
+      url: 'http://localhost/printLabelMsg.php',
       method: 'POST',
       header: {
         'content-type': 'application/x-www-form-urlencoded'
       },
-      data: printData,
+      data: formData.toString(),
       success: (printRes) => {
-        console.log('打印接口返回:', printRes.data)  // 添加这行，查看完整返回
+        console.log('打印接口返回:', printRes.data)
         if (printRes.data && printRes.data.ret === 0) {
-          console.log('订单打印成功:', orderDetail.orderNumber)
+          console.log('订单打印成功:', order.orderNumber)
         } else {
           console.error('订单打印失败:', printRes.data ? printRes.data.msg : '打印接口异常')
+          console.error('打印失败详情:', printRes)
         }
       },
       fail: (error) => {
         console.error('调用打印接口失败:', error)
       }
     })
-  }
-
+}
   stopPolling() {
     if (this.timer) {
       clearInterval(this.timer)
