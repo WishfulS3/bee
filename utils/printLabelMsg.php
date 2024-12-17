@@ -3,21 +3,17 @@ header("Content-type: text/html; charset=utf-8");
 include 'HttpClient.class.php';
 
 // 飞鹅云配置
-define('USER', 'xu1271669848@gmail.com');  //*必填*：飞鹅云后台注册账号
-define('UKEY', 'kVBTc5n7kWLp87E4');  //*必填*：飞鹅云后台注册账号后生成的UKEY
+define('USER', 'xu1271669848@gmail.com');
+define('UKEY', 'kVBTc5n7kWLp87E4');
 
 //以下参数不需要修改
-define('IP','api.feieyun.cn');      //接口IP或域名
-define('PORT',80);                   //接口IP端口
-define('PATH','/Api/Open/');         //接口路径
+define('IP','api.feieyun.cn');
+define('PORT',80);
+define('PATH','/Api/Open/');
 
-// 接收小程序发送的订单数据
-$postData = file_get_contents('php://input');
-$orderData = json_decode($postData, true);
-
-if(!$orderData) {
-    $orderData = $_POST;
-}
+// 接收并解析数据
+$orderData = $_POST;
+$orderData['goods'] = json_decode($orderData['goods'], true);
 
 // 验证必要字段
 if (empty($orderData['orderid']) || empty($orderData['goods'])) {
@@ -60,12 +56,18 @@ $content .= '合计：'.number_format($totalAmount, 2).'元<BR>';
 if (!empty($orderData['remark'])) {
     $content .= '备注：'.$orderData['remark'].'<BR>';
 }
+if (!empty($orderData['tel'])) {
+    $content .= '电话：'.$orderData['tel'].'<BR>';
+}
 $content .= '--------------------------------<BR>';
 $content .= '<QR>9.8 COFFEE</QR>';
 
+
+
+
 try {
     // 调用打印机打印
-    $result = printMsg('你的打印机SN码', $content, 1);  // 这里需要替换你的打印机SN码
+    $result = printMsg('960264115', $content, 1);  // 这里需要替换你的打印机SN码
     
     // 解析返回结果
     $response = json_decode($result, true);
