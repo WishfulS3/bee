@@ -143,43 +143,33 @@ class PrintService {
       orderid: order.orderNumber,
       remark: order.remark || '',
       name: order.shopName,
-      tel: extJson.联系电话 || '', // 从扩展信息中获取电话
+      tel: extJson.联系电话 || '',
       z_number: order.qudanhao || '',
-      goods: goodsList.map(item => ({
+      goods: JSON.stringify(goodsList.map(item => ({
         title: item.goodsName,
         price: item.amount,
         num: item.number
-      }))
+      })))
     }
 
     // 如果商品列表为空，使用订单总额
-    if (!printData.goods.length) {
-      printData.goods = [{
+    if (!goodsList.length) {
+      printData.goods = JSON.stringify([{
         title: '商品',
         price: order.amountReal || 0,
         num: order.goodsNumber || 1
-      }]
+      }])
     }
 
     console.log('发送到打印机的数据:', printData)
 
-    // 将数据转换为 URL 编码格式
-    const formData = new URLSearchParams()
-    Object.keys(printData).forEach(key => {
-      if (key === 'goods') {
-        formData.append(key, JSON.stringify(printData[key]))
-      } else {
-        formData.append(key, printData[key])
-      }
-    })
-
     wx.request({
-      url: 'http://localhost/printLabelMsg.php',
+      url: 'http://localhost/print/printLabelMsg.php',
       method: 'POST',
       header: {
         'content-type': 'application/x-www-form-urlencoded'
       },
-      data: formData.toString(),
+      data: printData,
       success: (printRes) => {
         console.log('打印接口返回:', printRes.data)
         if (printRes.data && printRes.data.ret === 0) {
