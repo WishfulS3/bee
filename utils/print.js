@@ -164,7 +164,7 @@ class PrintService {
     console.log('发送到打印机的数据:', printData)
 
     wx.request({
-      url: 'http://localhost/print/printLabelMsg.php',
+      url: 'http://47.98.186.186:8080/print/printLabelMsg.php',
       method: 'POST',
       header: {
         'content-type': 'application/x-www-form-urlencoded'
