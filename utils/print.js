@@ -1,4 +1,5 @@
 // utils/print.js
+/*
 const WXAPI = require('apifm-wxapi')
 
 class PrintService {
@@ -194,3 +195,5 @@ class PrintService {
 }
 
 module.exports = new PrintService()
+
+*/
