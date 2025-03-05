@@ -95,6 +95,8 @@ module.exports =
 /* eslint-disable */
 // 小程序开发api接口工具包，https://github.com/gooking/wxapi
 var API_BASE_URL = 'https://api.it120.cc';
+
+//var API_BASE_URL = 'https://9kuai8coffee.asia';
 var subDomain = '-';
 var merchantId = '0';
 
