@@ -76,7 +76,7 @@ App({
         const token = wx.getStorageSync('token')
         WXAPI.checkToken(token).then(res => {
           if (res.code == 0) {
-            PrintService.startPolling()
+            //PrintService.startPolling()
           } else {
             AUTH.authorize()
           }
